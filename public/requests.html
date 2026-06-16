@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pedidos - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card" id="card-novo" style="display:none">
+        <h3>Submeter novo pedido</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:8px">Indique os bens de que necessita. O pedido será analisado pela associação.</p>
+        <div class="flex">
+          <div style="flex:2"><label>Observações</label><input id="r-notes" placeholder="Ex.: família com crianças"></div>
+        </div>
+        <div id="itens"></div>
+        <div class="btn-row">
+          <button type="button" class="btn gray sm" onclick="escolherBens()">+ Escolher bens</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn" onclick="submeter()">Submeter pedido</button>
+        </div>
+        <p id="err-novo" class="error"></p>
+      </div>
+
+      <div class="card" id="card-filtros" style="display:none">
+        <h3>Filtrar pedidos</h3>
+        <div class="flex">
+          <div><label>Estado</label>
+            <select id="f-estado" onchange="aplicarFiltros()">
+              <option value="ativos">Ativos (por tratar)</option>
+              <option value="">Todos</option>
+              <option value="submitted">Submetido</option>
+              <option value="approved">Aprovado</option>
+              <option value="on_hold">Em espera</option>
+              <option value="scheduled">Agendado</option>
+              <option value="in_delivery">Em entrega</option>
+              <option value="delivered">Entregue</option>
+              <option value="rejected">Rejeitado</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+          </div>
+          <div><label>De (data)</label><input id="f-de" type="date" onchange="aplicarFiltros()"></div>
+          <div><label>Até (data)</label><input id="f-ate" type="date" onchange="aplicarFiltros()"></div>
+          <div style="flex:0;display:flex;align-items:flex-end"><button class="btn gray" onclick="limparFiltros()">Limpar</button></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Pedidos de bens</h3>
+        <div id="tabela-pedidos"></div>
+        <p id="err" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3 id="m-codigo"></h3>
+      <p class="sub" id="m-info"></p>
+      <table>
+        <thead id="m-cab"><tr><th>Artigo</th><th>Qtd pedida</th><th>Stock disponível</th></tr></thead>
+        <tbody id="m-itens"></tbody>
+      </table>
+      <div class="btn-row">
+        <button class="btn" onclick="imprimirDetalhe()">Imprimir</button>
+        <button class="btn gray" onclick="fecharDetalhe()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-aprovar">
+    <div class="modal" style="max-width:680px">
+      <h3>Aprovar pedido <span id="a-codigo"></span></h3>
+      <p class="sub">Atribua a prioridade e confirme (ou ajuste) as quantidades conforme o stock disponível.</p>
+      <div class="flex" style="margin-bottom:10px">
+        <div><label>Prioridade</label>
+          <select id="a-priority">
+            <option value="low">Baixa</option>
+            <option value="medium" selected>Média</option>
+            <option value="high">Alta</option>
+            <option value="urgent">Urgente</option>
+          </select>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Artigo</th><th>Armazém</th><th>Qtd pedida</th><th>Disponível</th><th>Qtd a aprovar</th></tr></thead>
+        <tbody id="a-itens"></tbody>
+      </table>
+      <p id="a-err" class="error"></p>
+      <div class="btn-row">
+        <button class="btn" onclick="confirmarAprovacao()">Aprovar pedido</button>
+        <button class="btn gray" onclick="fecharAprovacao()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tabela.js"></script>
+  <script src="js/seletor.js"></script>
+  <script src="js/requests.js"></script>
+</body>
+</html>

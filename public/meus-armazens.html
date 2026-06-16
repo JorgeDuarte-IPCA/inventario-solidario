@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Armazéns do meu distrito - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3 id="titulo-distrito">Armazéns do meu distrito</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:8px">Pode contactar diretamente o armazém mais próximo de si.</p>
+        <table>
+          <thead><tr><th>Nome</th><th>Distrito</th><th>Morada</th><th>Telefone</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <p id="err" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    requireAuth();
+    renderShell('meus-armazens.html', 'Armazéns do meu distrito');
+
+    async function carregar() {
+      try {
+        const r = await api('/api/warehouses/mine');
+        if (r.district) {
+          document.getElementById('titulo-distrito').textContent = 'Armazéns no distrito de ' + r.district;
+        }
+        const rows = r.warehouses || [];
+        document.getElementById('tbody').innerHTML = rows.map(w => `
+          <tr>
+            <td>${w.name}</td>
+            <td>${w.district}</td>
+            <td>${w.address || '-'}</td>
+            <td>${w.phone ? `<a href="tel:${w.phone}" style="color:var(--verde);font-weight:600;text-decoration:none">${w.phone}</a>` : '-'}</td>
+          </tr>`).join('') ||
+          '<tr><td colspan="4" style="color:var(--cinza)">Ainda não há armazéns associados ao seu distrito.</td></tr>';
+      } catch (e) { document.getElementById('err').textContent = e.message; }
+    }
+    carregar();
+  </script>
+</body>
+</html>

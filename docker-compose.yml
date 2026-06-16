@@ -1,0 +1,42 @@
+services:
+  # ---------- Base de dados MySQL ----------
+  mysql:
+    image: mysql:8.0
+    container_name: charity_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: charity_inventory
+    ports:
+      - "3306:3306"
+    volumes:
+      # Os ficheiros .sql sao executados por ordem alfabetica no 1.o arranque
+      - ./database:/docker-entrypoint-initdb.d:ro
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------- Aplicacao Node.js ----------
+  app:
+    build: .
+    container_name: charity_app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: charity_inventory
+      PORT: 3000
+      JWT_SECRET: segredo_docker_dev
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysql_data:

@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventário Solidário - Entrar</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <h1><span class="cruz"></span>Inventário Solidário</h1>
+      <p class="sub">Gestão de inventário e distribuição de bens</p>
+
+      <!-- ENTRAR -->
+      <div id="painel-login">
+        <label>Email</label>
+        <input id="email" type="email" placeholder="exemplo@email.pt">
+        <label>Password</label>
+        <input id="password" type="password" placeholder="********">
+        <div class="btn-row">
+          <button class="btn" style="width:100%" onclick="entrar()">Entrar</button>
+        </div>
+        <p id="err" class="error"></p>
+        <p style="font-size:.82rem;color:var(--cinza);text-align:center;margin-top:14px">
+          <a href="#" onclick="mostrar('recuperar');return false">Esqueci-me da senha</a>
+        </p>
+        <p style="font-size:.82rem;color:var(--cinza);text-align:center;margin-top:4px">
+          Ainda não tem conta? <a href="#" onclick="mostrar('registo');return false">Registar</a>
+        </p>
+      </div>
+
+      <!-- RECUPERAR SENHA -->
+      <div id="painel-recuperar" style="display:none">
+        <label>Email da conta</label>
+        <input id="rec-email" type="email" placeholder="exemplo@email.pt">
+        <div class="btn-row">
+          <button class="btn" style="width:100%" onclick="recuperar()">Enviar link de recuperação</button>
+        </div>
+        <p id="rec-msg" style="color:var(--verde);font-size:.85rem"></p>
+        <p id="rec-err" class="error"></p>
+        <p style="font-size:.82rem;color:var(--cinza);text-align:center;margin-top:14px">
+          <a href="#" onclick="mostrar('login');return false">Voltar ao início de sessão</a>
+        </p>
+      </div>
+
+      <!-- REGISTAR -->
+      <div id="painel-registo" style="display:none">
+        <label>Tipo de conta</label>
+        <select id="r-role" onchange="toggleAgregado()">
+          <option value="beneficiary">Beneficiário (quero pedir bens)</option>
+          <option value="donor">Doador (quero doar bens)</option>
+        </select>
+        <label>Nome completo</label>
+        <input id="r-name" type="text">
+        <label>Email</label>
+        <input id="r-email" type="email">
+        <label>Password</label>
+        <input id="r-password" type="password">
+        <div id="campo-agregado">
+          <label>Número de pessoas no agregado familiar</label>
+          <input id="r-household" type="number" min="1" value="1">
+        </div>
+        <div id="campo-morada">
+          <label>Morada</label>
+          <input id="r-address" type="text" placeholder="Rua, nº">
+          <label>Código postal</label>
+          <input id="r-postal" type="text" placeholder="0000-000">
+          <label>Cidade</label>
+          <input id="r-city" type="text" placeholder="Localidade">
+          <label>Telemóvel</label>
+          <input id="r-phone" type="tel" placeholder="9xxxxxxxx">
+          <p style="font-size:.74rem;color:var(--cinza);margin-top:4px">A morada é usada para o associar ao armazém mais próximo.</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn" style="width:100%" onclick="registar()">Submeter registo</button>
+        </div>
+        <p id="err-reg" class="error"></p>
+        <p id="ok-reg" style="color:var(--verde);font-size:.85rem"></p>
+        <p style="font-size:.82rem;color:var(--cinza);text-align:center;margin-top:14px">
+          Já tem conta? <a href="#" onclick="mostrar('login');return false">Entrar</a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    function mostrar(qual) {
+      document.getElementById('painel-login').style.display = qual === 'login' ? '' : 'none';
+      document.getElementById('painel-registo').style.display = qual === 'registo' ? '' : 'none';
+      document.getElementById('painel-recuperar').style.display = qual === 'recuperar' ? '' : 'none';
+    }
+
+    async function recuperar() {
+      document.getElementById('rec-err').textContent = '';
+      document.getElementById('rec-msg').textContent = '';
+      try {
+        const res = await fetch('/api/auth/forgot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: document.getElementById('rec-email').value })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro');
+        document.getElementById('rec-msg').textContent = data.message ||
+          'Se o email existir, será enviado um link de recuperação.';
+      } catch (e) {
+        document.getElementById('rec-err').textContent = e.message;
+      }
+    }
+    function toggleAgregado() {
+      const r = document.getElementById('r-role').value;
+      document.getElementById('campo-agregado').style.display = r === 'beneficiary' ? '' : 'none';
+    }
+
+    async function entrar() {
+      document.getElementById('err').textContent = '';
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro');
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        location.href = homeFor(data.user.role);
+      } catch (e) {
+        document.getElementById('err').textContent = e.message;
+      }
+    }
+
+    async function registar() {
+      document.getElementById('err-reg').textContent = '';
+      document.getElementById('ok-reg').textContent = '';
+      try {
+        const role = document.getElementById('r-role').value;
+        const body = {
+          name: document.getElementById('r-name').value,
+          email: document.getElementById('r-email').value,
+          password: document.getElementById('r-password').value,
+          role: role,
+          address: document.getElementById('r-address').value,
+          postal_code: document.getElementById('r-postal').value,
+          city: document.getElementById('r-city').value,
+          phone: document.getElementById('r-phone').value
+        };
+        if (role === 'beneficiary') {
+          body.household_size = Number(document.getElementById('r-household').value) || 1;
+        }
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro');
+        document.getElementById('ok-reg').textContent =
+          'Registo submetido! A sua conta ficará disponível após aprovação.';
+        ['r-name', 'r-email', 'r-password', 'r-address', 'r-postal', 'r-city', 'r-phone'].forEach(id => document.getElementById(id).value = '');
+      } catch (e) {
+        document.getElementById('err-reg').textContent = e.message;
+      }
+    }
+
+    document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
+  </script>
+</body>
+</html>

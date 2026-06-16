@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configurações - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3>Controlo de frequência de pedidos</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:8px">
+          Intervalo mínimo (em dias) entre pedidos do mesmo beneficiário. Use <b>0</b> para desativar.
+        </p>
+        <div class="flex">
+          <div><label>Intervalo mínimo (dias)</label><input id="ri-days" type="number" min="0" value="0"></div>
+          <div style="flex:0;align-self:flex-end"><button class="btn" onclick="guardarIntervalo()">Guardar</button></div>
+        </div>
+        <p id="ri-msg" style="font-size:.85rem;color:var(--verde)"></p>
+      </div>
+
+      <div class="card">
+        <h3>Envio de email via Brevo (recomendado online)</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:8px">
+          O alojamento gratuito (Render) bloqueia o envio por SMTP. Use o <b>Brevo</b>, que envia por API
+          e funciona online. Crie conta grátis em brevo.com, verifique o seu email como remetente,
+          gere uma <b>chave de API (SMTP &amp; API → API Keys)</b> e cole aqui.
+        </p>
+        <div class="flex">
+          <div style="flex:2"><label>Chave de API do Brevo</label><input id="b-key" type="password" placeholder="xkeysib-..."></div>
+          <div style="flex:2"><label>Email remetente (verificado no Brevo)</label><input id="b-from" type="email" placeholder="o_seu_email@gmail.com"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn" onclick="guardarBrevo()">Guardar Brevo</button>
+        </div>
+        <p id="msg-brevo" style="font-size:.85rem;color:var(--verde)"></p>
+        <p id="err-brevo" class="error"></p>
+      </div>
+
+      <div class="card">
+        <h3>Servidor de email (SMTP)</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:8px">
+          Alternativa ao Brevo (funciona em alojamento que permita SMTP, ou localmente).
+          Configure o servidor de envio de emails. Exemplo para Gmail: servidor <b>smtp.gmail.com</b>,
+          porta <b>587</b>, e uma <b>palavra-passe de aplicação</b> (não a password normal da conta).
+        </p>
+        <div class="flex">
+          <div style="flex:2"><label>Servidor (host)</label><input id="s-host" placeholder="smtp.gmail.com"></div>
+          <div><label>Porta</label><input id="s-port" type="number" value="587"></div>
+          <div><label>Ligação segura (SSL)</label>
+            <select id="s-secure"><option value="false">Não (porta 587)</option><option value="true">Sim (porta 465)</option></select>
+          </div>
+        </div>
+        <div class="flex">
+          <div><label>Utilizador</label><input id="s-user" placeholder="a_sua_conta@gmail.com"></div>
+          <div><label>Password</label><input id="s-pass" type="password" placeholder="••••••••"></div>
+        </div>
+        <label>Remetente (From)</label>
+        <input id="s-from" placeholder="Inventário Solidário &lt;no-reply@caridade.pt&gt;">
+        <div class="btn-row">
+          <button class="btn" onclick="guardar()">Guardar configuração</button>
+        </div>
+        <p id="msg" style="font-size:.85rem;color:var(--verde)"></p>
+        <p id="err" class="error"></p>
+      </div>
+
+      <div class="card">
+        <h3>Testar envio</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:8px">Envia um email de teste para confirmar que a configuração funciona.</p>
+        <div class="flex">
+          <div style="flex:2"><label>Email de destino</label><input id="t-to" type="email" placeholder="para@exemplo.pt"></div>
+          <div style="flex:0"><button class="btn" onclick="testar()">Enviar teste</button></div>
+        </div>
+        <p id="msg-teste" style="font-size:.85rem;color:var(--verde)"></p>
+        <p id="err-teste" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+</html>

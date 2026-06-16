@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doadores - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3>Novo doador</h3>
+        <div class="flex">
+          <div><label>Nome completo</label><input id="n-name"></div>
+          <div><label>Email</label><input id="n-email" type="email"></div>
+          <div><label>Password</label><input id="n-pass" type="password"></div>
+        </div>
+        <div class="flex">
+          <div><label>Morada</label><input id="n-address" placeholder="Rua, nº"></div>
+          <div><label>Código postal</label><input id="n-postal" placeholder="0000-000"></div>
+          <div><label>Cidade</label><input id="n-city" placeholder="Localidade"></div>
+          <div><label>Telemóvel</label><input id="n-phone" type="tel" placeholder="9xxxxxxxx"></div>
+          <div style="flex:0;display:flex;align-items:flex-end"><button class="btn" onclick="criarDoador()">Criar</button></div>
+        </div>
+        <p id="n-err" class="error"></p>
+        <p id="n-msg" style="color:var(--verde);font-size:.85rem"></p>
+      </div>
+
+      <div class="card" id="card-pendentes" style="display:none">
+        <h3>Pedidos de alteração de dados</h3>
+        <table>
+          <thead><tr><th>Nome</th><th>Campo</th><th>Atual</th><th>Novo</th><th>Ações</th></tr></thead>
+          <tbody id="tbody-pendentes"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Doadores</h3>
+        <div id="tabela-donor"></div>
+        <p id="err" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal">
+      <h3>Editar doador</h3>
+      <label>Nome</label><input id="e-name">
+      <label>Morada</label><input id="e-address">
+      <label>Código postal</label><input id="e-postal">
+      <label>Cidade</label><input id="e-city">
+      <label>Telemóvel</label><input id="e-phone">
+      <p id="e-err" class="error"></p>
+      <div class="btn-row">
+        <button class="btn" onclick="guardarEdicao()">Guardar</button>
+        <button class="btn gray" onclick="fecharEdicao()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tabela.js"></script>
+  <script>
+    requireAuth();
+    if (!guardPage(['admin', 'social_technician'])) throw new Error('redir');
+    renderShell('donors.html', 'Doadores');
+
+    let tabela = null;
+    let listaClientes = [];
+    let editUserId = null;
+
+    async function carregar() {
+      document.getElementById('err').textContent = '';
+      try {
+        const rows = (await api('/api/users/clients?type=donor')).filter(c => c.profile_type === 'donor');
+        if (!tabela) {
+          tabela = criarTabela({
+            container: document.getElementById('tabela-donor'),
+            colunas: [
+              { titulo: 'Nome', campo: 'name' },
+              { titulo: 'Email', campo: 'email' },
+              { titulo: 'Telemóvel', campo: 'phone', render: c => c.phone || '-' },
+              { titulo: 'Morada', campo: 'address', render: c => c.address || '-' },
+              { titulo: 'Cód. Postal', campo: 'postal_code', render: c => c.postal_code || '-' },
+              { titulo: 'Cidade', campo: 'city', render: c => c.city || '-' },
+              { titulo: 'Aprovação', ordenarPor: 'is_approved', render: c => c.is_approved
+                ? '<span class="badge green">aprovado</span>' : '<span class="badge orange">pendente</span>' },
+              { titulo: 'Ações', ordenavel: false, render: c => {
+                let a = c.is_approved ? '' : `<button class="btn sm" onclick="aprovar(${c.id})">Aprovar</button> `;
+                a += `<button class="btn sm gray" onclick="editarCliente(${c.id})">Editar</button>`;
+                return a;
+              } },
+            ],
+            porPagina: 10,
+            vazio: 'Nenhum doador.'
+          });
+        }
+        listaClientes = rows;
+        tabela.setDados(rows);
+        carregarPendentes();
+      } catch (e) { document.getElementById('err').textContent = e.message; }
+    }
+
+    async function carregarPendentes() {
+      try {
+        const pend = (await api('/api/profile/change-requests')).filter(p => p.role === 'donor');
+        const card = document.getElementById('card-pendentes');
+        if (pend.length === 0) { card.style.display = 'none'; return; }
+        card.style.display = '';
+        const linhas = [];
+        for (const p of pend) {
+          const campos = [
+            ['Morada', p.atual_address, p.address],
+            ['Cód. Postal', p.atual_postal, p.postal_code],
+            ['Cidade', p.atual_city, p.city],
+            ['Telemóvel', p.atual_phone, p.phone],
+          ];
+          let primeiro = true;
+          for (const [label, atual, novo] of campos) {
+            if ((atual || '') === (novo || '')) continue;
+            linhas.push(`<tr>
+              <td>${primeiro ? p.name : ''}</td>
+              <td>${label}</td>
+              <td>${atual || '-'}</td>
+              <td><b>${novo || '-'}</b></td>
+              <td>${primeiro ? `<button class="btn sm" onclick="aprovarAlteracao(${p.id})">Aprovar</button>
+                   <button class="btn sm danger" onclick="rejeitarAlteracao(${p.id})">Rejeitar</button>` : ''}</td>
+            </tr>`);
+            primeiro = false;
+          }
+          if (primeiro) {
+            linhas.push(`<tr><td>${p.name}</td><td colspan="3" style="color:var(--cinza)">Sem alterações efetivas</td>
+              <td><button class="btn sm danger" onclick="rejeitarAlteracao(${p.id})">Rejeitar</button></td></tr>`);
+          }
+        }
+        document.getElementById('tbody-pendentes').innerHTML = linhas.join('');
+      } catch (e) { /* silencioso */ }
+    }
+
+    async function aprovar(id) {
+      try { await api('/api/users/' + id + '/approve', { method: 'PATCH', body: JSON.stringify({ is_approved: true }) }); carregar(); }
+      catch (e) { alert(e.message); }
+    }
+
+    async function criarDoador() {
+      document.getElementById('n-err').textContent = '';
+      document.getElementById('n-msg').textContent = '';
+      try {
+        await api('/api/users', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: document.getElementById('n-name').value,
+            email: document.getElementById('n-email').value,
+            password: document.getElementById('n-pass').value,
+            role: 'donor',
+            address: document.getElementById('n-address').value,
+            postal_code: document.getElementById('n-postal').value,
+            city: document.getElementById('n-city').value,
+            phone: document.getElementById('n-phone').value
+          })
+        });
+        ['n-name','n-email','n-pass','n-address','n-postal','n-city','n-phone'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('n-msg').textContent = 'Doador criado.';
+        carregar();
+      } catch (e) { document.getElementById('n-err').textContent = e.message; }
+    }
+
+    async function aprovarAlteracao(id) {
+      try { await api('/api/profile/change-requests/' + id + '/approve', { method: 'PATCH' }); carregar(); }
+      catch (e) { alert(e.message); }
+    }
+    async function rejeitarAlteracao(id) {
+      try { await api('/api/profile/change-requests/' + id + '/reject', { method: 'PATCH' }); carregar(); }
+      catch (e) { alert(e.message); }
+    }
+
+    function editarCliente(id) {
+      const c = listaClientes.find(x => x.id === id);
+      if (!c) return;
+      editUserId = id;
+      document.getElementById('e-name').value = c.name || '';
+      document.getElementById('e-address').value = c.address || '';
+      document.getElementById('e-postal').value = c.postal_code || '';
+      document.getElementById('e-city').value = c.city || '';
+      document.getElementById('e-phone').value = c.phone || '';
+      document.getElementById('e-err').textContent = '';
+      document.getElementById('modal-edit').classList.add('open');
+    }
+    function fecharEdicao() { document.getElementById('modal-edit').classList.remove('open'); editUserId = null; }
+    async function guardarEdicao() {
+      document.getElementById('e-err').textContent = '';
+      try {
+        await api('/api/profile/client/' + editUserId, {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: document.getElementById('e-name').value,
+            address: document.getElementById('e-address').value,
+            postal_code: document.getElementById('e-postal').value,
+            city: document.getElementById('e-city').value,
+            phone: document.getElementById('e-phone').value
+          })
+        });
+        fecharEdicao();
+        carregar();
+      } catch (e) { document.getElementById('e-err').textContent = e.message; }
+    }
+
+    (async () => { carregar(); })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Armazéns - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card" id="card-novo">
+        <h3>Novo armazém</h3>
+        <div class="flex">
+          <div><label>Nome</label><input id="w-name" placeholder="Armazém Central"></div>
+          <div><label>Distrito</label>
+            <select id="w-district">
+              <option>Aveiro</option><option>Beja</option><option>Braga</option>
+              <option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option>
+              <option>Évora</option><option>Faro</option><option>Guarda</option>
+              <option>Leiria</option><option selected>Lisboa</option><option>Portalegre</option>
+              <option>Porto</option><option>Santarém</option><option>Setúbal</option>
+              <option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option>
+              <option>Açores</option><option>Madeira</option>
+            </select>
+          </div>
+          <div><label>Morada</label><input id="w-address" placeholder="Rua, localidade"></div>
+          <div><label>Telefone</label><input id="w-phone" type="tel" placeholder="2xxxxxxxx"></div>
+          <div style="flex:0"><button class="btn" onclick="criar()">Adicionar</button></div>
+        </div>
+        <p id="err" class="error"></p>
+      </div>
+
+      <div class="card">
+        <h3>Armazéns por distrito</h3>
+        <label>Filtrar por distrito</label>
+        <select id="filtro" onchange="carregar()" style="max-width:240px">
+          <option value="">Todos os distritos</option>
+        </select>
+        <table style="margin-top:16px">
+          <thead><tr><th>Nome</th><th>Distrito</th><th>Morada</th><th>Telefone</th><th>Produtos</th><th>Estado</th><th>Ações</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal">
+      <h3>Editar armazém</h3>
+      <label>Nome</label><input id="e-name">
+      <label>Distrito</label>
+      <select id="e-district">
+        <option>Aveiro</option><option>Beja</option><option>Braga</option>
+        <option>Bragança</option><option>Castelo Branco</option><option>Coimbra</option>
+        <option>Évora</option><option>Faro</option><option>Guarda</option>
+        <option>Leiria</option><option>Lisboa</option><option>Portalegre</option>
+        <option>Porto</option><option>Santarém</option><option>Setúbal</option>
+        <option>Viana do Castelo</option><option>Vila Real</option><option>Viseu</option>
+        <option>Açores</option><option>Madeira</option>
+      </select>
+      <label>Morada</label><input id="e-address">
+      <label>Telefone</label><input id="e-phone" type="tel">
+      <p id="e-err" class="error"></p>
+      <div class="btn-row">
+        <button class="btn" onclick="guardarEdicao()">Guardar</button>
+        <button class="btn gray" onclick="fecharEdicao()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/warehouses.js"></script>
+</body>
+</html>

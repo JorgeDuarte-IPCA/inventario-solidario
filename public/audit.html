@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auditoria - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3>Registo de auditoria</h3>
+        <p style="font-size:.85rem;color:var(--cinza)">Histórico das ações sensíveis efetuadas no sistema (300 mais recentes).</p>
+        <div id="tabela-audit"></div>
+        <p id="err" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tabela.js"></script>
+  <script>
+    renderShell('audit.html', 'Auditoria');
+
+    const ACAO_PT = { update: 'Alteração', delete: 'Remoção', discard: 'Descarte', transition: 'Mudança de estado', create: 'Criação' };
+
+    async function carregar() {
+      try {
+        const registos = await api('/api/audit');
+        const tabela = criarTabela({
+          container: document.getElementById('tabela-audit'),
+          colunas: [
+            { titulo: 'Data', render: r => new Date(r.created_at).toLocaleString('pt-PT') },
+            { titulo: 'Utilizador', campo: 'user_name' },
+            { titulo: 'Ação', render: r => ACAO_PT[r.action] || r.action },
+            { titulo: 'Detalhe', campo: 'details' },
+          ],
+          porPagina: 15,
+          pesquisa: true,
+          vazio: 'Sem registos de auditoria.'
+        });
+        tabela.setDados(registos);
+      } catch (e) {
+        document.getElementById('err').textContent = e.message;
+      }
+    }
+    carregar();
+  </script>
+</body>
+</html>

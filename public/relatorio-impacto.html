@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatório de Impacto - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .impacto-wrap { max-width: 800px; margin: 0 auto; }
+    .impacto-header { text-align: center; border-bottom: 3px solid var(--vermelho); padding-bottom: 16px; margin-bottom: 24px; }
+    .impacto-header h1 { color: var(--vermelho); margin: 0 0 4px; }
+    .impacto-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+    .impacto-kpi { background: #fdecec; border: 1px solid var(--vermelho); border-radius: 10px; padding: 18px; text-align: center; }
+    .impacto-kpi .num { font-size: 2rem; font-weight: 700; color: var(--vermelho); }
+    .impacto-kpi .lbl { font-size: .85rem; color: #444; margin-top: 4px; }
+    .impacto-frase { background: #f7f7f7; border-left: 4px solid var(--vermelho); padding: 14px 18px; margin: 20px 0; font-size: 1.05rem; }
+    .impacto-foot { margin-top: 30px; font-size: .8rem; color: var(--cinza); text-align: center; }
+    .no-print { margin: 20px 0; text-align: center; }
+    @media print {
+      .no-print, .sidebar, .topbar { display: none !important; }
+      .main, .app { display: block !important; margin: 0; padding: 0; }
+      .impacto-kpi { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="no-print" style="text-align:center">
+        <button class="btn" onclick="window.print()">Imprimir / Guardar como PDF</button>
+      </div>
+
+      <div class="impacto-wrap" id="conteudo">
+        <p>A carregar...</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    renderShell('relatorio-impacto.html', 'Relatório de Impacto');
+
+    function fmt(n) { return Number(n || 0).toLocaleString('pt-PT'); }
+
+    async function carregar() {
+      try {
+        const d = await api('/api/dashboard/impacto');
+        const data = new Date(d.gerado_em).toLocaleDateString('pt-PT', { day: '2-digit', month: 'long', year: 'numeric' });
+        const top = (d.topDistribuidos || []).map(t => `<li>${t.name} — ${fmt(t.total)} unidades</li>`).join('');
+
+        document.getElementById('conteudo').innerHTML = `
+          <div class="impacto-header">
+            <h1>Relatório de Impacto</h1>
+            <p style="margin:0;color:#555">Inventário Solidário</p>
+            <p style="margin:4px 0 0;font-size:.85rem;color:#888">Gerado em ${data}</p>
+          </div>
+
+          <div class="impacto-frase">
+            Até à data, distribuímos <strong>${fmt(d.itens_entregues)}</strong> bens em
+            <strong>${fmt(d.pedidos_entregues)}</strong> entregas, ajudando
+            <strong>${fmt(d.familias_ajudadas)}</strong> famílias.
+          </div>
+
+          <div class="impacto-grid">
+            <div class="impacto-kpi"><div class="num">${fmt(d.itens_entregues)}</div><div class="lbl">Bens distribuídos</div></div>
+            <div class="impacto-kpi"><div class="num">${fmt(d.familias_ajudadas)}</div><div class="lbl">Famílias ajudadas</div></div>
+            <div class="impacto-kpi"><div class="num">${fmt(d.pedidos_entregues)}</div><div class="lbl">Pedidos entregues</div></div>
+            <div class="impacto-kpi"><div class="num">${fmt(d.itens_doados)}</div><div class="lbl">Bens doados</div></div>
+            <div class="impacto-kpi"><div class="num">${fmt(d.doacoes_recebidas)}</div><div class="lbl">Doações recebidas</div></div>
+            <div class="impacto-kpi"><div class="num">${fmt(d.doadores_registados)}</div><div class="lbl">Doadores</div></div>
+            <div class="impacto-kpi"><div class="num">${fmt(d.beneficiarios_registados)}</div><div class="lbl">Beneficiários</div></div>
+            <div class="impacto-kpi"><div class="num">${fmt(d.armazens_ativos)}</div><div class="lbl">Armazéns ativos</div></div>
+            <div class="impacto-kpi"><div class="num">${fmt(d.stock_atual)}</div><div class="lbl">Bens em stock</div></div>
+          </div>
+
+          ${top ? `<h3>Bens mais distribuídos</h3><ul>${top}</ul>` : ''}
+
+          <div class="impacto-foot">
+            Documento gerado automaticamente pelo sistema Inventário Solidário.
+          </div>`;
+      } catch (e) {
+        document.getElementById('conteudo').innerHTML = '<p class="error">' + e.message + '</p>';
+      }
+    }
+    carregar();
+  </script>
+</body>
+</html>

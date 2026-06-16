@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3>Novo produto</h3>
+        <div class="flex">
+          <div><label>Nome</label><input id="p-name"></div>
+          <div><label>Família</label><select id="p-family"></select></div>
+          <div><label>Localização</label><input id="p-loc" placeholder="A1"></div>
+          <div><label>Tamanho <span style="color:var(--cinza);font-weight:400">(vestuário)</span></label><input id="p-size" placeholder="Ex: M, 40"></div>
+          <div><label>Stock mínimo</label><input id="p-min" type="number" min="0" value="0" title="Abaixo deste valor, alerta os doadores"></div>
+          <div style="flex:0"><button class="btn" onclick="criar()">Adicionar</button></div>
+        </div>
+        <p id="err" class="error"></p>
+      </div>
+
+      <div class="card">
+        <h3>Filtrar</h3>
+        <div class="flex">
+          <div><label>Armazém</label>
+            <select id="f-warehouse" onchange="carregar()">
+              <option value="">Todos os armazéns</option>
+            </select>
+          </div>
+          <div><label>Tipo de artigo (família)</label>
+            <select id="f-family" onchange="carregar()">
+              <option value="">Todos os tipos</option>
+            </select>
+          </div>
+          <div><label>Estado de validade</label>
+            <select id="f-color" onchange="carregar()">
+              <option value="">Todos</option>
+              <option value="green">Válido</option>
+              <option value="yellow">Atenção</option>
+              <option value="red">A expirar</option>
+              <option value="expired">Fora de validade</option>
+            </select>
+          </div>
+          <div><label>Estado do bem</label>
+            <select id="f-condition" onchange="carregar()">
+              <option value="">Todos</option>
+              <option value="new">Novo</option>
+              <option value="good">Bom estado</option>
+              <option value="used">Gasto</option>
+              <option value="with_defect">Com defeito</option>
+              <option value="to_repair">Para arranjar</option>
+            </select>
+          </div>
+          <div><label>Tamanho</label>
+            <select id="f-size" onchange="carregar()">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div style="flex:0;display:flex;align-items:flex-end">
+            <button class="btn gray" onclick="limparFiltros()">Limpar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Lista de produtos</h3>
+        <div id="tabela-produtos"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal de edicao -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3>Editar produto</h3>
+      <p class="sub" id="m-titulo"></p>
+      <label>Nome</label><input id="m-name">
+      <label>Família</label><select id="m-family"></select>
+      <label>Quantidade</label><input id="m-qty" type="number">
+      <label>Armazém</label><select id="m-warehouse"></select>
+      <label>Localização</label><input id="m-loc">
+      <label>Tamanho (vestuário/calçado)</label><input id="m-size" placeholder="Ex: M, 40">
+      <label>Stock mínimo (alerta aos doadores)</label><input id="m-min" type="number" min="0" value="0">
+      <label>Estado do bem</label>
+      <select id="m-condition">
+        <option value="new">Novo</option>
+        <option value="good">Bom estado</option>
+        <option value="used">Gasto</option>
+      </select>
+      <p id="m-err" class="error"></p>
+      <div class="btn-row">
+        <button class="btn" onclick="guardar()">Guardar</button>
+        <button class="btn gray" onclick="fecharModal()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalhe do artigo: distribuicao por armazem -->
+  <div class="modal-overlay" id="modal-detalhe">
+    <div class="modal">
+      <h3 id="d-titulo"></h3>
+      <p class="sub" id="d-sub"></p>
+      <table>
+        <thead><tr><th>Armazém</th><th>Distrito</th><th>Local</th><th>Qtd</th><th>Validade</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="d-itens"></tbody>
+      </table>
+      <div class="btn-row">
+        <button class="btn gray" onclick="fecharDetalhe()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tabela.js"></script>
+  <script src="js/products.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Armazém - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <a href="warehouses.html" style="color:var(--verde);text-decoration:none;font-size:.85rem">← Voltar aos armazéns</a>
+        <h3 id="w-nome" style="margin-top:8px"></h3>
+        <p class="sub" id="w-info" style="color:var(--cinza);font-size:.88rem"></p>
+      </div>
+
+      <div class="card">
+        <h3>Artigos disponíveis neste armazém</h3>
+        <div id="tabela-artigos"></div>
+        <p id="err" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tabela.js"></script>
+  <script>
+    requireAuth();
+    renderShell('warehouses.html', 'Detalhe do armazém');
+
+    const params = new URLSearchParams(location.search);
+    const warehouseId = params.get('id');
+
+    async function carregar() {
+      try {
+        if (!warehouseId) { document.getElementById('err').textContent = 'Armazém não indicado.'; return; }
+        // Dados do armazem
+        const armazens = await api('/api/warehouses');
+        const w = armazens.find(x => String(x.id) === String(warehouseId));
+        if (w) {
+          document.getElementById('w-nome').textContent = w.name;
+          document.getElementById('w-info').textContent =
+            `${w.district}${w.address ? ' · ' + w.address : ''}${w.phone ? ' · ' + w.phone : ''}`;
+        }
+        // Artigos do armazem
+        const produtos = await api('/api/products?warehouse_id=' + warehouseId);
+        criarTabela({
+          container: document.getElementById('tabela-artigos'),
+          colunas: [
+            { titulo: 'Artigo', campo: 'name' },
+            { titulo: 'Família', campo: 'family_name', render: p => p.family_name || '-' },
+            { titulo: 'Qtd', campo: 'quantity', tipo: 'number' },
+            { titulo: 'Local', campo: 'location', render: p => p.location || '-' },
+            { titulo: 'Validade', campo: 'expiry_date', render: p => p.expiry_date || '-' },
+            { titulo: 'Estado', ordenarPor: 'color_status', render: p => badge(p.color_status) },
+          ],
+          porPagina: 10, vazio: 'Sem artigos neste armazém.'
+        }).setDados(produtos);
+      } catch (e) { document.getElementById('err').textContent = e.message; }
+    }
+    carregar();
+  </script>
+</body>
+</html>

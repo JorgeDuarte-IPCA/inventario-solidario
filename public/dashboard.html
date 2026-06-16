@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painel - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div id="aviso-pendentes"></div>
+      <div class="kpi-grid" id="kpis"></div>
+
+      <div class="chart-grid">
+        <div class="chart-card"><h3>Stock por família de produto</h3><div class="chart-box"><canvas id="chartFamily"></canvas></div></div>
+        <div class="chart-card"><h3>Pedidos por estado</h3><div class="chart-box"><canvas id="chartStatus"></canvas></div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><h3>Stock por distrito</h3><div class="chart-box"><canvas id="chartDistrict"></canvas></div></div>
+        <div class="chart-card"><h3>Estado de validade do stock</h3><div class="chart-box"><canvas id="chartColor"></canvas></div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><h3>Bens doados por mês (%)</h3><div class="chart-box"><canvas id="chartDoadosMes"></canvas></div></div>
+        <div class="chart-card"><h3>Bens recebidos por mês (%)</h3><div class="chart-box"><canvas id="chartRecebidosMes"></canvas></div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card" style="grid-column:1 / -1">
+          <h3>Procura vs. Oferta por artigo</h3>
+          <p style="font-size:.8rem;color:var(--cinza);margin:-4px 0 8px">Compara o que é pedido (procura) com o que entra por doação (oferta). Os artigos no topo são os que têm maior défice.</p>
+          <div class="chart-box" style="height:320px"><canvas id="chartDemandaOferta"></canvas></div>
+        </div>
+      </div>
+      <div class="chart-grid">
+        <div class="chart-card"><h3>Top de artigos mais pedidos</h3><div class="chart-box"><canvas id="chartTopPedidos"></canvas></div></div>
+        <div class="chart-card"><h3>Top de artigos mais doados</h3><div class="chart-box"><canvas id="chartTopDoados"></canvas></div></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

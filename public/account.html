@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>A minha conta - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card" style="max-width:480px">
+        <h3>Alterar a minha senha</h3>
+        <p class="sub" id="conta-info" style="color:var(--cinza);font-size:.85rem;margin-bottom:12px"></p>
+        <label>Senha atual</label>
+        <input id="atual" type="password">
+        <label>Nova senha</label>
+        <input id="nova1" type="password" placeholder="mínimo 6 caracteres">
+        <label>Confirmar nova senha</label>
+        <input id="nova2" type="password">
+        <div class="btn-row">
+          <button class="btn" onclick="alterar()">Guardar</button>
+        </div>
+        <p id="msg" style="color:var(--verde);font-size:.85rem"></p>
+        <p id="err" class="error"></p>
+      </div>
+
+      <div class="card" style="max-width:480px" id="card-dados">
+        <h3>Os meus dados</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:10px">As alterações à morada e contactos ficam pendentes de validação.</p>
+        <div id="aviso-pendente" style="display:none;background:#fff4e5;border:1px solid #f0c987;border-left:4px solid #d98326;color:#8a5a16;padding:10px 12px;border-radius:8px;font-size:.82rem;margin-bottom:12px">
+          Tem um pedido de alteração à espera de validação.
+        </div>
+        <label>Morada</label><input id="d-address">
+        <label>Código postal</label><input id="d-postal" placeholder="0000-000">
+        <label>Cidade</label><input id="d-city">
+        <label>Telemóvel</label><input id="d-phone" type="tel">
+        <div class="btn-row">
+          <button class="btn" onclick="submeterDados()">Submeter alteração</button>
+        </div>
+        <p id="msg-dados" style="color:var(--verde);font-size:.85rem"></p>
+        <p id="err-dados" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    requireAuth();
+    renderShell('account.html', 'A minha conta');
+
+    // Identificar a conta autenticada
+    const u = getUser() || {};
+    (function mostrarConta() {
+      const el = document.getElementById('conta-info');
+      if (el) el.textContent = 'Conta: ' + (u.name || '') + (u.email ? ' (' + u.email + ')' : '');
+    })();
+
+    // A secao de dados pessoais so faz sentido para beneficiario/doador
+    const temMorada = ['beneficiary', 'donor'].includes(u.role);
+    if (!temMorada) {
+      const c = document.getElementById('card-dados');
+      if (c) c.style.display = 'none';
+    } else {
+      carregarDados();
+    }
+
+    async function carregarDados() {
+      try {
+        const me = await api('/api/users/me');
+        document.getElementById('d-address').value = me.address || '';
+        document.getElementById('d-postal').value = me.postal_code || '';
+        document.getElementById('d-city').value = me.city || '';
+        document.getElementById('d-phone').value = me.phone || '';
+        const pcr = await api('/api/profile/my-change-request');
+        if (pcr) {
+          document.getElementById('aviso-pendente').style.display = 'block';
+          document.getElementById('d-address').value = pcr.address || '';
+          document.getElementById('d-postal').value = pcr.postal_code || '';
+          document.getElementById('d-city').value = pcr.city || '';
+          document.getElementById('d-phone').value = pcr.phone || '';
+        }
+      } catch (e) { /* silencioso */ }
+    }
+
+    async function submeterDados() {
+      document.getElementById('err-dados').textContent = '';
+      document.getElementById('msg-dados').textContent = '';
+      try {
+        const r = await api('/api/profile/change-request', {
+          method: 'POST',
+          body: JSON.stringify({
+            address: document.getElementById('d-address').value,
+            postal_code: document.getElementById('d-postal').value,
+            city: document.getElementById('d-city').value,
+            phone: document.getElementById('d-phone').value
+          })
+        });
+        document.getElementById('msg-dados').textContent = r.message || 'Pedido submetido.';
+        document.getElementById('aviso-pendente').style.display = 'block';
+      } catch (e) { document.getElementById('err-dados').textContent = e.message; }
+    }
+
+    async function alterar() {
+      document.getElementById('err').textContent = '';
+      document.getElementById('msg').textContent = '';
+      const nova1 = document.getElementById('nova1').value;
+      const nova2 = document.getElementById('nova2').value;
+      if (nova1.length < 6) { document.getElementById('err').textContent = 'A nova senha deve ter pelo menos 6 caracteres.'; return; }
+      if (nova1 !== nova2) { document.getElementById('err').textContent = 'As senhas não coincidem.'; return; }
+      try {
+        await api('/api/users/me/password', {
+          method: 'PATCH',
+          body: JSON.stringify({
+            current_password: document.getElementById('atual').value,
+            new_password: nova1
+          })
+        });
+        document.getElementById('msg').textContent = 'Senha alterada com sucesso.';
+        ['atual', 'nova1', 'nova2'].forEach(id => document.getElementById(id).value = '');
+      } catch (e) {
+        document.getElementById('err').textContent = e.message;
+      }
+    }
+  </script>
+</body>
+</html>

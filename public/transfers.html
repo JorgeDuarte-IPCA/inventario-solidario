@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transferências - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3>Nova transferência</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:8px">Escolha o armazém de origem e de destino, depois adicione os artigos a transferir.</p>
+        <div class="flex">
+          <div><label>Armazém de origem</label><select id="t-from"></select></div>
+          <div><label>Armazém de destino</label><select id="t-to"></select></div>
+        </div>
+
+        <div id="itens" style="margin-top:12px"></div>
+        <div class="btn-row">
+          <button class="btn gray sm" onclick="addItem()">+ Adicionar artigo</button>
+        </div>
+
+        <label>Observações (opcional)</label>
+        <input id="t-notes" placeholder="motivo da transferência">
+        <div class="btn-row">
+          <button class="btn" onclick="transferir()">Transferir tudo</button>
+        </div>
+        <p id="err" class="error"></p>
+        <p id="msg" style="font-size:.85rem;color:var(--verde)"></p>
+      </div>
+
+      <div class="card">
+        <h3>Histórico de transferências</h3>
+        <div id="tabela-transfer"></div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3 id="m-codigo"></h3>
+      <p class="sub" id="m-info"></p>
+      <table>
+        <thead><tr><th>Artigo</th><th>Quantidade</th></tr></thead>
+        <tbody id="m-itens"></tbody>
+      </table>
+      <div class="btn-row">
+        <button class="btn" onclick="imprimirDetalhe()">Imprimir</button>
+        <button class="btn gray" onclick="fecharDetalhe()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tabela.js"></script>
+  <script src="js/transfers.js"></script>
+</body>
+</html>

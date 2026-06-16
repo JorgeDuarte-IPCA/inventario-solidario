@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artigo - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <a href="products.html" style="color:var(--verde);text-decoration:none;font-size:.85rem">← Voltar aos produtos</a>
+        <h3 id="a-nome" style="margin-top:8px"></h3>
+        <p class="sub" id="a-info" style="color:var(--cinza);font-size:.88rem"></p>
+      </div>
+
+      <div class="card">
+        <h3>Validades disponíveis</h3>
+        <p style="font-size:.85rem;color:var(--cinza);margin-bottom:8px">Quantidade total por data de validade (todos os armazéns).</p>
+        <table>
+          <thead><tr><th>Validade</th><th>Quantidade</th><th>Estado</th></tr></thead>
+          <tbody id="tbody-validades"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Distribuição por armazém</h3>
+        <table>
+          <thead><tr><th>Armazém</th><th>Distrito</th><th>Local</th><th>Qtd</th><th>Validade</th><th>Estado</th><th id="th-acoes"></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <p id="err" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    const user = requireAuth();
+    renderShell('products.html', 'Detalhe do artigo');
+    const podeGerir = ['admin', 'warehouse_operator'].includes(user.role);
+
+    const params = new URLSearchParams(location.search);
+    const nomeArtigo = params.get('nome');
+
+    async function carregar() {
+      try {
+        if (!nomeArtigo) { document.getElementById('err').textContent = 'Artigo não indicado.'; return; }
+        const todos = await api('/api/products');
+        const registos = todos.filter(p => p.name === nomeArtigo);
+        const total = registos.reduce((s, p) => s + (Number(p.quantity) || 0), 0);
+        const armazens = new Set(registos.map(r => r.warehouse_id)).size;
+
+        document.getElementById('a-nome').textContent = nomeArtigo;
+        document.getElementById('a-info').textContent = `Stock total: ${total} · ${armazens} armazém(ns)`;
+        if (podeGerir) document.getElementById('th-acoes').textContent = 'Ações';
+
+        // Resumo por validade (soma quantidades por data, todos os armazens)
+        const porValidade = new Map();
+        for (const p of registos) {
+          const chave = p.expiry_date || 'sem-validade';
+          if (!porValidade.has(chave)) porValidade.set(chave, { data: p.expiry_date, qtd: 0, cor: p.color_status });
+          porValidade.get(chave).qtd += Number(p.quantity) || 0;
+        }
+        const validades = [...porValidade.values()].sort((a, b) => {
+          if (!a.data) return 1; if (!b.data) return -1; return a.data < b.data ? -1 : 1;
+        });
+        document.getElementById('tbody-validades').innerHTML = validades.map(v => `
+          <tr>
+            <td>${v.data || 'Sem validade'}</td>
+            <td>${v.qtd}</td>
+            <td>${badgeValidade(v.cor)}</td>
+          </tr>`).join('') || '<tr><td colspan="3" style="color:var(--cinza)">Sem dados.</td></tr>';
+
+        document.getElementById('tbody').innerHTML = registos.map(p => `
+          <tr>
+            <td>${p.warehouse_name || '-'}</td>
+            <td>${p.warehouse_district || '-'}</td>
+            <td>${p.location || '-'}</td>
+            <td>${p.quantity}</td>
+            <td>${p.expiry_date || '-'}</td>
+            <td>${badgeValidade(p.color_status)}</td>
+            <td>${podeGerir
+              ? `<button class="btn sm gray" onclick="location.href='products.html?editar=${p.id}'">Editar</button>`
+                + (p.color_status === 'expired' && p.quantity > 0
+                  ? ` <button class="btn sm" style="background:#3a3a3a" onclick="descartar(${p.id}, '${(p.name || '').replace(/'/g, '')}')">Descartar</button>`
+                  : '')
+              : ''}</td>
+          </tr>`).join('') || '<tr><td colspan="7" style="color:var(--cinza)">Sem registos.</td></tr>';
+      } catch (e) { document.getElementById('err').textContent = e.message; }
+    }
+
+    async function descartar(id, nome) {
+      if (!confirm('Descartar o stock fora de validade deste lote? Esta ação remove a quantidade e regista a saída.')) return;
+      try {
+        const r = await api('/api/products/' + id + '/discard', { method: 'POST' });
+        alert('Descartadas ' + (r.discarded || 0) + ' unidades.');
+        carregar();
+      } catch (e) { alert(e.message); }
+    }
+    carregar();
+  </script>
+</body>
+</html>

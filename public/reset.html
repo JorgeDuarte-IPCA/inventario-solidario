@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redefinir senha - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-card">
+      <h1><span class="cruz"></span>Inventário Solidário</h1>
+      <p class="sub">Definir nova senha</p>
+
+      <div id="form">
+        <label>Nova senha</label>
+        <input id="pass1" type="password" placeholder="mínimo 6 caracteres">
+        <label>Confirmar nova senha</label>
+        <input id="pass2" type="password" placeholder="repita a senha">
+        <div class="btn-row">
+          <button class="btn" style="width:100%" onclick="redefinir()">Guardar nova senha</button>
+        </div>
+        <p id="msg" style="color:var(--verde);font-size:.85rem"></p>
+        <p id="err" class="error"></p>
+      </div>
+
+      <p style="font-size:.82rem;color:var(--cinza);text-align:center;margin-top:14px">
+        <a href="index.html">Voltar ao início de sessão</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Token vem no URL: reset.html?token=xxxx
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (!token) {
+      document.getElementById('form').style.display = 'none';
+      document.getElementById('err') && (document.getElementById('err').textContent = '');
+    }
+
+    async function redefinir() {
+      document.getElementById('err').textContent = '';
+      document.getElementById('msg').textContent = '';
+      const p1 = document.getElementById('pass1').value;
+      const p2 = document.getElementById('pass2').value;
+      if (p1.length < 6) { document.getElementById('err').textContent = 'A senha deve ter pelo menos 6 caracteres.'; return; }
+      if (p1 !== p2) { document.getElementById('err').textContent = 'As senhas não coincidem.'; return; }
+      try {
+        const res = await fetch('/api/auth/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, password: p1 })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro');
+        document.getElementById('msg').textContent = data.message || 'Senha alterada com sucesso.';
+        document.getElementById('form').style.display = 'none';
+      } catch (e) {
+        document.getElementById('err').textContent = e.message;
+      }
+    }
+  </script>
+</body>
+</html>

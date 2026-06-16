@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beneficiários e Doadores - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3>Filtrar por armazém</h3>
+        <div class="flex">
+          <div><label>Armazém</label>
+            <select id="f-warehouse" onchange="carregar()">
+              <option value="">Todos os armazéns</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Beneficiários</h3>
+        <table>
+          <thead><tr><th>Nome</th><th>Email</th><th>Telemóvel</th><th>Morada</th><th>Cód. Postal</th><th>Cidade</th><th>Agregado</th><th>Armazém</th><th>Aprovação</th><th>Ações</th></tr></thead>
+          <tbody id="tbody-benef"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>Doadores</h3>
+        <table>
+          <thead><tr><th>Nome</th><th>Email</th><th>Telemóvel</th><th>Morada</th><th>Cód. Postal</th><th>Cidade</th><th>Armazém</th><th>Aprovação</th><th>Ações</th></tr></thead>
+          <tbody id="tbody-donor"></tbody>
+        </table>
+        <p id="err" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/clients.js"></script>
+</body>
+</html>

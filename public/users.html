@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Utilizadores - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3>Novo utilizador</h3>
+        <div class="flex">
+          <div><label>Nome</label><input id="u-name"></div>
+          <div><label>Email</label><input id="u-email" type="email"></div>
+          <div><label>Password</label><input id="u-pass" type="password"></div>
+          <div><label>Papel</label>
+            <select id="u-role" onchange="toggleAgregado()">
+              <option value="admin">Administrador</option>
+              <option value="social_technician">Técnico Social</option>
+              <option value="warehouse_operator">Operador de Armazém</option>
+              <option value="donor">Doador</option>
+              <option value="beneficiary">Beneficiário</option>
+            </select>
+          </div>
+          <div id="u-campo-agregado" style="display:none"><label>Agregado familiar</label><input id="u-household" type="number" min="1" value="1"></div>
+          <div id="u-campo-morada" style="display:none;flex:1 1 100%">
+            <div class="flex">
+              <div><label>Morada</label><input id="u-address" placeholder="Rua, nº"></div>
+              <div><label>Código postal</label><input id="u-postal" placeholder="0000-000"></div>
+              <div><label>Cidade</label><input id="u-city" placeholder="Localidade"></div>
+              <div><label>Telemóvel</label><input id="u-phone" type="tel" placeholder="9xxxxxxxx"></div>
+            </div>
+            <p style="font-size:.74rem;color:var(--cinza);margin-top:4px">A morada é usada para associar ao armazém mais próximo.</p>
+          </div>
+          <div style="flex:0"><button class="btn" onclick="criar()">Criar</button></div>
+        </div>
+        <p id="err" class="error"></p>
+      </div>
+
+      <div class="card">
+        <h3>Utilizadores do sistema</h3>
+        <div id="tabela-users"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tabela.js"></script>
+  <script src="js/users.js"></script>
+</body>
+</html>
