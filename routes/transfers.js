@@ -12,7 +12,7 @@ const router = express.Router();
 // Listar transferencias (uma linha por documento)
 router.get('/', authenticate, authorize('admin', 'warehouse_operator', 'social_technician'), async (req, res) => {
   const [rows] = await pool.query(`
-    SELECT t.id, t.code, t.from_warehouse_id, t.to_warehouse_id, t.status, t.created_by, t.created_at,
+    SELECT t.id, t.code, t.from_warehouse_id, t.to_warehouse_id, t.notes, t.created_by, t.created_at,
            wf.name AS from_name, wt.name AS to_name, u.name AS created_by_name,
            COUNT(ti.id) AS num_itens, COALESCE(SUM(ti.quantity),0) AS total_qty
       FROM stock_transfers t
@@ -20,7 +20,7 @@ router.get('/', authenticate, authorize('admin', 'warehouse_operator', 'social_t
       JOIN warehouses wt ON wt.id = t.to_warehouse_id
       LEFT JOIN users u ON u.id = t.created_by
       LEFT JOIN stock_transfer_items ti ON ti.transfer_id = t.id
-     GROUP BY t.id, t.code, t.from_warehouse_id, t.to_warehouse_id, t.status, t.created_by, t.created_at,
+     GROUP BY t.id, t.code, t.from_warehouse_id, t.to_warehouse_id, t.notes, t.created_by, t.created_at,
               wf.name, wt.name, u.name
      ORDER BY t.created_at DESC`);
   res.json(rows);

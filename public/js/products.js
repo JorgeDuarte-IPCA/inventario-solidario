@@ -18,6 +18,17 @@ const CONDICOES_EXTRA = [
   { v: 'with_defect', t: 'Com defeito' },
   { v: 'to_repair', t: 'Para arranjar' },
 ];
+// Traducao e cor de cada condicao (estado do bem)
+const COND_PT = { new: 'Novo', good: 'Bom estado', used: 'Gasto', with_defect: 'Com defeito', to_repair: 'Para arranjar' };
+const COND_CLASSE = { new: 'green', good: 'green', used: 'yellow', with_defect: 'orange', to_repair: 'red' };
+// Mostra as condicoes distintas de um grupo como etiquetas (ex.: "Bom estado, Gasto")
+function badgeCondicoes(setCondicoes) {
+  if (!setCondicoes || !setCondicoes.size) return '-';
+  // Ordem logica: novo > bom > gasto > com defeito > para arranjar
+  const ordem = ['new', 'good', 'used', 'with_defect', 'to_repair'];
+  return [...setCondicoes].sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b))
+    .map(c => `<span class="badge ${COND_CLASSE[c] || 'gray'}">${COND_PT[c] || c}</span>`).join(' ');
+}
 // Familias (pelo nome) que recebem as opcoes extra
 function familiaUsaExtra(nomeFamilia) {
   if (!nomeFamilia) return false;
@@ -91,6 +102,7 @@ function agruparPorNome(lista) {
         pior_cor: 'green',     // estado de validade mais critico do grupo
         validade_proxima: null, // data de validade mais proxima de expirar
         tamanhos: new Set(),    // tamanhos distintos do grupo (vestuario)
+        condicoes: new Set(),   // condicoes distintas do grupo (vestuario/casa)
         registos: []
       });
     }
@@ -98,6 +110,7 @@ function agruparPorNome(lista) {
     g.total += Number(p.quantity) || 0;
     g.registos.push(p);
     if (p.size) g.tamanhos.add(p.size);
+    if (p.condition) g.condicoes.add(p.condition);
     // pior estado: expired > red > yellow > green
     const ordem = { green: 0, yellow: 1, red: 2, expired: 3 };
     if ((ordem[p.color_status] ?? 0) > (ordem[g.pior_cor] ?? 0)) g.pior_cor = p.color_status;
@@ -118,8 +131,10 @@ function colunasProdutos() {
     { titulo: 'Tamanhos', render: g => g.tamanhos && g.tamanhos.size ? [...g.tamanhos].sort().join(', ') : '-' },
     { titulo: 'Stock total', campo: 'total', tipo: 'number' },
     { titulo: 'Armazéns', campo: 'num_armazens', tipo: 'number' },
-    { titulo: 'Validade + próxima', campo: 'validade_proxima', render: g => g.validade_proxima || '-' },
-    { titulo: 'Estado', ordenarPor: 'pior_cor', render: g => badgeValidade(g.pior_cor) },
+    { titulo: 'Validade + próxima', campo: 'validade_proxima', render: g =>
+      familiaUsaExtra(g.family_name) ? '<span style="color:var(--cinza)">—</span>' : (g.validade_proxima || '-') },
+    { titulo: 'Estado', ordenarPor: 'pior_cor', render: g =>
+      familiaUsaExtra(g.family_name) ? badgeCondicoes(g.condicoes) : badgeValidade(g.pior_cor) },
   ];
 }
 

@@ -50,6 +50,19 @@
   <script>
     const user = requireAuth();
     renderShell('products.html', 'Detalhe do artigo');
+
+    // Estado do bem (condicao) para artigos de vestuario/casa
+    const COND_PT = { new: 'Novo', good: 'Bom estado', used: 'Gasto', with_defect: 'Com defeito', to_repair: 'Para arranjar' };
+    const COND_CLASSE = { new: 'green', good: 'green', used: 'yellow', with_defect: 'orange', to_repair: 'red' };
+    function badgeCondicao(c) {
+      if (!c) return '-';
+      return `<span class="badge ${COND_CLASSE[c] || 'gray'}">${COND_PT[c] || c}</span>`;
+    }
+    function usaCondicao(nomeFamilia) {
+      if (!nomeFamilia) return false;
+      const n = nomeFamilia.toLowerCase();
+      return n.includes('vestu') || n.includes('roupa') || n.includes('casa') || n.includes('lar') || n.includes('mobil');
+    }
     const podeGerir = ['admin', 'warehouse_operator'].includes(user.role);
 
     const params = new URLSearchParams(location.search);
@@ -90,8 +103,8 @@
             <td>${p.warehouse_district || '-'}</td>
             <td>${p.location || '-'}</td>
             <td>${p.quantity}</td>
-            <td>${p.expiry_date || '-'}</td>
-            <td>${badgeValidade(p.color_status)}</td>
+            <td>${p.expiry_date || (usaCondicao(p.family_name) ? '<span style="color:var(--cinza)">—</span>' : '-')}</td>
+            <td>${usaCondicao(p.family_name) ? badgeCondicao(p.condition) : badgeValidade(p.color_status)}</td>
             <td>${podeGerir
               ? `<button class="btn sm gray" onclick="location.href='products.html?editar=${p.id}'">Editar</button>`
                 + (p.color_status === 'expired' && p.quantity > 0
