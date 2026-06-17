@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!--
+     Inventario Solidario
+     Projeto academico - CTESP Redes e Seguranca Informatica - IPCA
+     Equipa: JDJB  (J-Jorge, D-Jose Daniel, J-Joao, B-Barreto)
+-->
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artigos por estado - Inventário Solidário</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main">
+      <div class="topbar">
+        <h2 id="page-title"></h2>
+        <div class="user-chip" id="user-chip"></div>
+      </div>
+
+      <div class="card">
+        <h3 id="titulo-estado">Artigos por estado</h3>
+        <p id="sub" style="font-size:.85rem;color:var(--cinza)"></p>
+        <div id="tabela-estado"></div>
+        <p id="err" class="error"></p>
+      </div>
+    </main>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/tabela.js"></script>
+  <script>
+    renderShell('products.html', 'Artigos por estado');
+
+    const VALIDADE_PT = { green: 'Válido', yellow: 'Atenção', red: 'A expirar', expired: 'Fora de validade' };
+    const VALIDADE_CL = { green: 'green', yellow: 'yellow', red: 'red', expired: 'dark' };
+    const COND_PT = { new: 'Novo', good: 'Bom estado', used: 'Gasto', with_defect: 'Com defeito', to_repair: 'Para arranjar' };
+    const COND_CL = { new: 'green', good: 'green', used: 'yellow', with_defect: 'orange', to_repair: 'red' };
+
+    // Ler tipo (validade|condicao) e estado do URL
+    const params = new URLSearchParams(location.search);
+    const tipo = params.get('tipo') || 'validade';
+    const estado = params.get('estado') || '';
+
+    async function carregar() {
+      try {
+        // Reaproveitar a API de produtos com o filtro certo
+        const filtro = tipo === 'condicao' ? ('condition=' + encodeURIComponent(estado))
+                                            : ('color=' + encodeURIComponent(estado));
+        const produtos = await api('/api/products?' + filtro);
+
+        // Etiqueta legível do estado
+        const nomeEstado = tipo === 'condicao' ? (COND_PT[estado] || estado) : (VALIDADE_PT[estado] || estado);
+        const classe = tipo === 'condicao' ? (COND_CL[estado] || 'gray') : (VALIDADE_CL[estado] || 'gray');
+        document.getElementById('titulo-estado').innerHTML =
+          `Artigos no estado: <span class="badge ${classe}">${nomeEstado}</span>`;
+        document.getElementById('sub').textContent =
+          tipo === 'condicao'
+            ? 'Artigos de vestuário/casa neste estado de conservação, com a quantidade em cada armazém.'
+            : 'Artigos neste estado de validade, com a quantidade em cada armazém.';
+
+        // Cada linha = um lote (artigo + armazém + quantidade)
+        const linhas = produtos.map(p => ({
+          name: p.name,
+          family_name: p.family_name || '-',
+          warehouse_name: p.warehouse_name || '— (sem armazém)',
+          warehouse_district: p.warehouse_district || '-',
+          size: p.size || '-',
+          quantity: Number(p.quantity) || 0
+        }));
+
+        const tabela = criarTabela({
+          container: document.getElementById('tabela-estado'),
+          colunas: [
+            { titulo: 'Artigo', campo: 'name', render: r =>
+              `<a href="artigo.html?nome=${encodeURIComponent(r.name)}" style="color:var(--verde);font-weight:600;text-decoration:none">${r.name}</a>` },
+            { titulo: 'Família', campo: 'family_name' },
+            { titulo: 'Tamanho', campo: 'size' },
+            { titulo: 'Armazém', campo: 'warehouse_name' },
+            { titulo: 'Distrito', campo: 'warehouse_district' },
+            { titulo: 'Quantidade', campo: 'quantity', tipo: 'number' },
+          ],
+          porPagina: 25,
+          pesquisa: true,
+          vazio: 'Não há artigos neste estado.'
+        });
+        tabela.setDados(linhas);
+
+        // Total geral
+        const total = linhas.reduce((s, r) => s + r.quantity, 0);
+        document.getElementById('sub').textContent +=
+          `  Total: ${total} unidade(s) em ${linhas.length} registo(s).`;
+      } catch (e) {
+        document.getElementById('err').textContent = e.message;
+      }
+    }
+    carregar();
+  </script>
+</body>
+</html>

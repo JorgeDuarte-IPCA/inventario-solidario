@@ -21,13 +21,21 @@ const CONDICOES_EXTRA = [
 // Traducao e cor de cada condicao (estado do bem)
 const COND_PT = { new: 'Novo', good: 'Bom estado', used: 'Gasto', with_defect: 'Com defeito', to_repair: 'Para arranjar' };
 const COND_CLASSE = { new: 'green', good: 'green', used: 'yellow', with_defect: 'orange', to_repair: 'red' };
-// Mostra as condicoes distintas de um grupo como etiquetas (ex.: "Bom estado, Gasto")
+// Mostra as condicoes distintas de um grupo como etiquetas clicaveis (ex.: "Bom estado, Gasto")
 function badgeCondicoes(setCondicoes) {
   if (!setCondicoes || !setCondicoes.size) return '-';
-  // Ordem logica: novo > bom > gasto > com defeito > para arranjar
   const ordem = ['new', 'good', 'used', 'with_defect', 'to_repair'];
   return [...setCondicoes].sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b))
-    .map(c => `<span class="badge ${COND_CLASSE[c] || 'gray'}">${COND_PT[c] || c}</span>`).join(' ');
+    .map(c => `<a href="estado.html?tipo=condicao&estado=${c}" class="badge ${COND_CLASSE[c] || 'gray'}" style="text-decoration:none" title="Ver quantidades por armazém">${COND_PT[c] || c}</a>`).join(' ');
+}
+// Mostra os estados de validade distintos de um grupo como etiquetas clicaveis (ex.: "Válido, Atenção")
+function badgeValidades(setCores) {
+  if (!setCores || !setCores.size) return '-';
+  const ordem = ['green', 'yellow', 'red', 'expired'];
+  const PT = { green: 'Válido', yellow: 'Atenção', red: 'A expirar', expired: 'Fora de validade' };
+  const CL = { green: 'green', yellow: 'yellow', red: 'red', expired: 'dark' };
+  return [...setCores].sort((a, b) => ordem.indexOf(a) - ordem.indexOf(b))
+    .map(c => `<a href="estado.html?tipo=validade&estado=${c}" class="badge ${CL[c] || 'gray'}" style="text-decoration:none" title="Ver quantidades por armazém">${PT[c] || c}</a>`).join(' ');
 }
 // Familias (pelo nome) que recebem as opcoes extra
 function familiaUsaExtra(nomeFamilia) {
@@ -101,6 +109,7 @@ function agruparPorNome(lista) {
         num_armazens: 0,
         pior_cor: 'green',     // estado de validade mais critico do grupo
         validade_proxima: null, // data de validade mais proxima de expirar
+        cores: new Set(),       // estados de validade distintos do grupo
         tamanhos: new Set(),    // tamanhos distintos do grupo (vestuario)
         condicoes: new Set(),   // condicoes distintas do grupo (vestuario/casa)
         registos: []
@@ -111,6 +120,7 @@ function agruparPorNome(lista) {
     g.registos.push(p);
     if (p.size) g.tamanhos.add(p.size);
     if (p.condition) g.condicoes.add(p.condition);
+    if (p.color_status) g.cores.add(p.color_status);
     // pior estado: expired > red > yellow > green
     const ordem = { green: 0, yellow: 1, red: 2, expired: 3 };
     if ((ordem[p.color_status] ?? 0) > (ordem[g.pior_cor] ?? 0)) g.pior_cor = p.color_status;
@@ -134,7 +144,7 @@ function colunasProdutos() {
     { titulo: 'Validade + próxima', campo: 'validade_proxima', render: g =>
       familiaUsaExtra(g.family_name) ? '<span style="color:var(--cinza)">—</span>' : (g.validade_proxima || '-') },
     { titulo: 'Estado', ordenarPor: 'pior_cor', render: g =>
-      familiaUsaExtra(g.family_name) ? badgeCondicoes(g.condicoes) : badgeValidade(g.pior_cor) },
+      familiaUsaExtra(g.family_name) ? badgeCondicoes(g.condicoes) : badgeValidades(g.cores) },
   ];
 }
 
