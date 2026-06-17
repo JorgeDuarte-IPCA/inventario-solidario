@@ -40,6 +40,13 @@ function criarTabela(opcoes) {
   let ordCampo = null;
   let ordDir = 1; // 1 asc, -1 desc
   let termo = '';
+  let imprimindo = false;
+
+  // Ao imprimir, mostrar todas as linhas filtradas (nao so a pagina atual)
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeprint', () => { imprimindo = true; aplicar(); });
+    window.addEventListener('afterprint', () => { imprimindo = false; aplicar(); });
+  }
 
   // Construir a estrutura base
   container.innerHTML = `
@@ -123,11 +130,11 @@ function criarTabela(opcoes) {
       });
     });
 
-    // Corpo (pagina atual)
+    // Corpo (pagina atual) — exceto ao imprimir, em que mostramos TODAS as linhas filtradas
     const totalPaginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
     if (pagina > totalPaginas) pagina = totalPaginas;
     const inicio = (pagina - 1) * porPagina;
-    const pageRows = filtrados.slice(inicio, inicio + porPagina);
+    const pageRows = imprimindo ? filtrados : filtrados.slice(inicio, inicio + porPagina);
 
     if (pageRows.length === 0) {
       elTbody.innerHTML = `<tr><td colspan="${colunas.length}" style="color:var(--cinza)">${vazio}</td></tr>`;

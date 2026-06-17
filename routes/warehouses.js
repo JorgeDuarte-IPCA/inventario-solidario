@@ -41,7 +41,7 @@ router.get('/mine', authenticate, async (req, res) => {
       return res.json({ district: null, warehouses: [] });
     }
     const [rows] = await pool.query(
-      `SELECT id, name, district, address, phone FROM warehouses
+      `SELECT id, name, district, address, phone, email FROM warehouses
         WHERE district = ? AND is_active = TRUE ORDER BY name`, [perfil.district]);
     res.json({ district: perfil.district, warehouses: rows });
   } catch (e) {
@@ -59,7 +59,7 @@ router.get('/districts', authenticate, async (req, res) => {
 // Criar armazem (admin)
 router.post('/', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { name, district, address, phone } = req.body;
+    const { name, district, address, phone, email } = req.body;
     if (!name || !district)
       return res.status(400).json({ error: 'Nome e distrito sao obrigatorios' });
     // Geocodificar a morada (se indicada) para obter coordenadas
@@ -68,8 +68,8 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
       try { const g = await geocode(`${address}, ${district}`); if (g) { lat = g.lat; lon = g.lon; } } catch {}
     }
     const [r] = await pool.query(
-      'INSERT INTO warehouses (name, district, address, phone, latitude, longitude) VALUES (?,?,?,?,?,?)',
-      [name, district, address || null, phone || null, lat, lon]
+      'INSERT INTO warehouses (name, district, address, phone, email, latitude, longitude) VALUES (?,?,?,?,?,?,?)',
+      [name, district, address || null, phone || null, email || null, lat, lon]
     );
     res.status(201).json({ id: r.insertId, name, district });
   } catch (e) {
@@ -81,7 +81,7 @@ router.post('/', authenticate, authorize('admin'), async (req, res) => {
 // Editar armazem (admin) - nome, distrito, morada, telefone
 router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
   try {
-    const { name, district, address, phone } = req.body;
+    const { name, district, address, phone, email } = req.body;
     if (!name || !district)
       return res.status(400).json({ error: 'Nome e distrito são obrigatórios' });
     // Re-geocodificar se houver morada (a morada pode ter mudado)
@@ -90,8 +90,8 @@ router.put('/:id', authenticate, authorize('admin'), async (req, res) => {
       try { const g = await geocode(`${address}, ${district}`); if (g) { lat = g.lat; lon = g.lon; } } catch {}
     }
     await pool.query(
-      'UPDATE warehouses SET name=?, district=?, address=?, phone=?, latitude=?, longitude=? WHERE id=?',
-      [name, district, address || null, phone || null, lat, lon, req.params.id]
+      'UPDATE warehouses SET name=?, district=?, address=?, phone=?, email=?, latitude=?, longitude=? WHERE id=?',
+      [name, district, address || null, phone || null, email || null, lat, lon, req.params.id]
     );
     res.json({ id: Number(req.params.id) });
   } catch (e) {

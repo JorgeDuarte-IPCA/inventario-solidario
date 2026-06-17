@@ -146,6 +146,19 @@ function renderShell(active, title) {
     topbar.insertBefore(voltar, topbar.firstChild);
   }
 
+  // Botao "Imprimir" na topbar (em todas as paginas)
+  if (topbar && !document.getElementById('btn-imprimir')) {
+    const imp = document.createElement('button');
+    imp.id = 'btn-imprimir';
+    imp.className = 'btn-imprimir no-print';
+    imp.innerHTML = '🖨 Imprimir';
+    imp.setAttribute('aria-label', 'Imprimir esta página');
+    imp.onclick = () => window.print();
+    // Colocar antes do user-chip (lado direito)
+    const chip = document.getElementById('user-chip');
+    if (chip) topbar.insertBefore(imp, chip); else topbar.appendChild(imp);
+  }
+
   // Botao hamburguer na topbar (visivel so em telemovel via CSS)
   if (topbar && !document.getElementById('menu-toggle')) {
     const btn = document.createElement('button');

@@ -87,6 +87,23 @@ body {
   cursor: pointer; margin-right: 12px; transition: background .15s, color .15s;
 }
 .btn-voltar:hover { background: var(--verde); color: #fff; }
+.btn-imprimir {
+  background: #fff; border: 1px solid var(--cinza); color: #444;
+  padding: 6px 12px; border-radius: 8px; font-size: .82rem; font-weight: 600;
+  cursor: pointer; margin-right: 12px; transition: background .15s;
+}
+.btn-imprimir:hover { background: #f0f0f0; }
+
+/* Impressao: mostrar so o conteudo principal, esconder navegacao e controlos */
+@media print {
+  .sidebar, .topbar, .menu-toggle, .menu-overlay, .no-print,
+  .btn-voltar, .btn-imprimir, .user-chip, .chatbot-widget, .chatbot-launcher { display: none !important; }
+  .app, .main { display: block !important; margin: 0 !important; padding: 0 !important; }
+  .card { box-shadow: none !important; border: 1px solid #ddd !important; break-inside: avoid; }
+  .tbl-rodape, .tbl-paginacao, .tbl-busca, .tbl-por-pagina { display: none !important; }
+  .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { background: #fff !important; }
+}
 .user-chip button {
   margin-left: 12px; background: none; border: 1px solid var(--linha);
   border-radius: 6px; padding: 5px 12px; cursor: pointer; color: var(--tinta);

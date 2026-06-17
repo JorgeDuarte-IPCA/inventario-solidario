@@ -47,6 +47,7 @@ function editar(id) {
   document.getElementById('e-district').value = w.district;
   document.getElementById('e-address').value = w.address || '';
   document.getElementById('e-phone').value = w.phone || '';
+  document.getElementById('e-email').value = w.email || '';
   document.getElementById('e-err').textContent = '';
   document.getElementById('modal-edit').classList.add('open');
 }
@@ -62,7 +63,8 @@ async function guardarEdicao() {
         name,
         district: document.getElementById('e-district').value,
         address: document.getElementById('e-address').value,
-        phone: document.getElementById('e-phone').value
+        phone: document.getElementById('e-phone').value,
+        email: document.getElementById('e-email').value
       })
     });
     fecharEdicao();
@@ -79,12 +81,14 @@ async function criar() {
         name: document.getElementById('w-name').value,
         district: document.getElementById('w-district').value,
         address: document.getElementById('w-address').value,
-        phone: document.getElementById('w-phone').value
+        phone: document.getElementById('w-phone').value,
+        email: document.getElementById('w-email').value
       })
     });
     document.getElementById('w-name').value = '';
     document.getElementById('w-address').value = '';
     document.getElementById('w-phone').value = '';
+    document.getElementById('w-email').value = '';
     await carregarFiltro();
     carregar();
   } catch (e) { document.getElementById('err').textContent = e.message; }

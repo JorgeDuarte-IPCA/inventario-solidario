@@ -74,6 +74,7 @@ CREATE TABLE warehouses (
   district  VARCHAR(60) NOT NULL,
   address   VARCHAR(255),
   phone     VARCHAR(40),
+  email     VARCHAR(150) NULL,
   latitude  DECIMAL(10,7) NULL,
   longitude DECIMAL(10,7) NULL,
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
