@@ -65,7 +65,11 @@ async function initDb() {
       multipleStatements: true,
     });
     await c.query(schema);
-    await c.query(seed);
+    try {
+      await c.query(seed);
+    } catch (seedErr) {
+      console.error('[init-db] AVISO: erro ao inserir dados de exemplo:', seedErr.message);
+    }
     await c.end();
 
     console.log('[init-db] Base de dados pronta.');

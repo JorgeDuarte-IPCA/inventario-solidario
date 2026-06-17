@@ -236,3 +236,16 @@ INSERT INTO request_items (request_id, product_id, requested_qty, approved_qty, 
 -- ---------- Entrega registada (exemplo de pickup) ----------
 INSERT INTO pickup_deliveries (request_id, type, status, scheduled_for, completed_at, address) VALUES
   (1, 'delivery', 'completed', '2026-01-15 10:00:00', '2026-01-15 11:30:00', 'Rua das Flores 12, Torres Vedras');
+
+-- ---------- Registos de auditoria de exemplo (acoes sensiveis) ----------
+INSERT INTO audit_log (user_id, user_name, action, entity, entity_id, details, created_at) VALUES
+  (1, 'Admin',        'update',     'product',  '1',  'Editou o artigo Arroz 1kg - quantidade 150 -> 153',          '2026-06-10 09:15:00'),
+  (3, 'Joao Armazem', 'transition', 'donation', '5',  'Doacao alterada para estado received',                       '2026-06-10 11:02:00'),
+  (2, 'Maria Silva',  'transition', 'request',  '3',  'Pedido alterado para estado approved',                       '2026-06-11 10:30:00'),
+  (3, 'Joao Armazem', 'transition', 'request',  '3',  'Pedido alterado para estado delivered',                      '2026-06-12 14:45:00'),
+  (1, 'Admin',        'update',     'product',  '21', 'Editou o artigo Paracetamol 1g - quantidade 45 -> 40',       '2026-06-12 16:20:00'),
+  (3, 'Joao Armazem', 'discard',    'product',  '21', 'Descartou 5 unidades de Paracetamol 1g (fora de validade)',  '2026-06-13 08:50:00'),
+  (2, 'Maria Silva',  'transition', 'donation', '8',  'Doacao alterada para estado validated',                      '2026-06-13 12:10:00'),
+  (1, 'Admin',        'delete',     'product',  '40', 'Removeu o artigo Lote de teste',                             '2026-06-14 09:05:00'),
+  (3, 'Joao Armazem', 'transition', 'request',  '7',  'Pedido alterado para estado scheduled',                      '2026-06-14 15:30:00'),
+  (2, 'Maria Silva',  'update',     'product',  '22', 'Editou o artigo Casaco de inverno',                          '2026-06-16 10:00:00');
