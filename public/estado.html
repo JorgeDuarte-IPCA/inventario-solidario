@@ -22,7 +22,7 @@
 
       <div class="card">
         <h3 id="titulo-estado">Artigos por estado</h3>
-        <p id="sub" style="font-size:.85rem;color:var(--cinza)"></p>
+        <p id="sub" style="font-size:.85rem;color:var(--cinza)">A carregar...</p>
         <div id="tabela-estado"></div>
         <p id="err" class="error"></p>
       </div>
@@ -32,7 +32,12 @@
   <script src="js/app.js"></script>
   <script src="js/tabela.js"></script>
   <script>
-    renderShell('products.html', 'Artigos por estado');
+    (function () {
+    try {
+      renderShell('products.html', 'Artigos por estado');
+    } catch (e) {
+      console.error('renderShell falhou:', e);
+    }
 
     const VALIDADE_PT = { green: 'Válido', yellow: 'Atenção', red: 'A expirar', expired: 'Fora de validade' };
     const VALIDADE_CL = { green: 'green', yellow: 'yellow', red: 'red', expired: 'dark' };
@@ -44,25 +49,20 @@
     const tipo = params.get('tipo') || 'validade';
     const estado = params.get('estado') || '';
 
+    function txt(id, valor) { const el = document.getElementById(id); if (el) el.textContent = valor; }
+    function htm(id, valor) { const el = document.getElementById(id); if (el) el.innerHTML = valor; }
+
     async function carregar() {
       try {
-        // Reaproveitar a API de produtos com o filtro certo
         const filtro = tipo === 'condicao' ? ('condition=' + encodeURIComponent(estado))
                                             : ('color=' + encodeURIComponent(estado));
         const produtos = await api('/api/products?' + filtro);
 
-        // Etiqueta legível do estado
         const nomeEstado = tipo === 'condicao' ? (COND_PT[estado] || estado) : (VALIDADE_PT[estado] || estado);
         const classe = tipo === 'condicao' ? (COND_CL[estado] || 'gray') : (VALIDADE_CL[estado] || 'gray');
-        document.getElementById('titulo-estado').innerHTML =
-          `Artigos no estado: <span class="badge ${classe}">${nomeEstado}</span>`;
-        document.getElementById('sub').textContent =
-          tipo === 'condicao'
-            ? 'Artigos de vestuário/casa neste estado de conservação, com a quantidade em cada armazém.'
-            : 'Artigos neste estado de validade, com a quantidade em cada armazém.';
+        htm('titulo-estado', `Artigos no estado: <span class="badge ${classe}">${nomeEstado}</span>`);
 
-        // Cada linha = um lote (artigo + armazém + quantidade)
-        const linhas = produtos.map(p => ({
+        const linhas = (produtos || []).map(p => ({
           name: p.name,
           family_name: p.family_name || '-',
           warehouse_name: p.warehouse_name || '— (sem armazém)',
@@ -70,6 +70,12 @@
           size: p.size || '-',
           quantity: Number(p.quantity) || 0
         }));
+
+        const total = linhas.reduce((s, r) => s + r.quantity, 0);
+        const base = tipo === 'condicao'
+          ? 'Artigos de vestuário/casa neste estado de conservação, com a quantidade em cada armazém.'
+          : 'Artigos neste estado de validade, com a quantidade em cada armazém.';
+        txt('sub', `${base}  Total: ${total} unidade(s) em ${linhas.length} registo(s).`);
 
         const tabela = criarTabela({
           container: document.getElementById('tabela-estado'),
@@ -87,16 +93,14 @@
           vazio: 'Não há artigos neste estado.'
         });
         tabela.setDados(linhas);
-
-        // Total geral
-        const total = linhas.reduce((s, r) => s + r.quantity, 0);
-        document.getElementById('sub').textContent +=
-          `  Total: ${total} unidade(s) em ${linhas.length} registo(s).`;
       } catch (e) {
-        document.getElementById('err').textContent = e.message;
+        txt('sub', '');
+        txt('err', 'Erro ao carregar: ' + (e && e.message ? e.message : e));
+        console.error('Erro em carregar():', e);
       }
     }
     carregar();
+    })();
   </script>
 </body>
 </html>
