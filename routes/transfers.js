@@ -6,6 +6,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const { authenticate, authorize } = require('../middleware/auth');
+const { verificarStockMinimo } = require('../config/stock-alert');
 
 const router = express.Router();
 
@@ -65,6 +66,7 @@ router.post('/', authenticate, authorize('admin', 'warehouse_operator'), async (
       [code, from_warehouse_id, to_warehouse_id, notes || null, req.user.id]
     );
     const transferId = cab.insertId;
+    const nomesTransferidos = [];
 
     for (const it of items) {
       const qty = Number(it.quantity);
@@ -117,9 +119,17 @@ router.post('/', authenticate, authorize('admin', 'warehouse_operator'), async (
         `INSERT INTO inventory_movements (product_id, type, quantity, reason) VALUES (?,?,?,?)`,
         [it.product_id, 'out', qty, 'Transferencia ' + code]
       );
+      nomesTransferidos.push(prod.name);
     }
 
     await conn.commit();
+
+    // Apos a transferencia, verificar se algum artigo ficou abaixo do minimo no armazem de ORIGEM
+    if (nomesTransferidos.length) {
+      const itensVerificar = nomesTransferidos.map(nome => ({ nome, warehouseId: from_warehouse_id }));
+      verificarStockMinimo(itensVerificar).catch(() => {});
+    }
+
     res.status(201).json({ ok: true, code });
   } catch (e) {
     if (conn) await conn.rollback();

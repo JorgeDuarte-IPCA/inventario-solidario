@@ -27,7 +27,7 @@
           <div><label>Família</label><select id="p-family"></select></div>
           <div><label>Localização</label><input id="p-loc" placeholder="A1"></div>
           <div><label>Tamanho <span style="color:var(--cinza);font-weight:400">(vestuário)</span></label><input id="p-size" placeholder="Ex: M, 40"></div>
-          <div><label>Stock mínimo</label><input id="p-min" type="number" min="0" value="0" title="Abaixo deste valor, alerta os doadores"></div>
+          <div><label>Stock mínimo</label><input id="p-min" type="number" min="0" value="0" title="Abaixo deste valor (neste armazém) gera alerta"></div>
           <div style="flex:0"><button class="btn" onclick="criar()">Adicionar</button></div>
         </div>
         <p id="err" class="error"></p>
@@ -94,7 +94,7 @@
       <label>Armazém</label><select id="m-warehouse"></select>
       <label>Localização</label><input id="m-loc">
       <label>Tamanho (vestuário/calçado)</label><input id="m-size" placeholder="Ex: M, 40">
-      <label>Stock mínimo (alerta aos doadores)</label><input id="m-min" type="number" min="0" value="0">
+      <label>Stock mínimo neste armazém (alerta)</label><input id="m-min" type="number" min="0" value="0">
       <label>Estado do bem</label>
       <select id="m-condition">
         <option value="new">Novo</option>

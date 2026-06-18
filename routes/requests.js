@@ -220,10 +220,10 @@ router.patch('/:id/transition', authenticate,
     }
 
     // Ao entregar: registar saidas de stock
-    let nomesEntregues = [];
+    let entregues = [];
     if (to === 'delivered') {
       const [items] = await conn.query(
-        `SELECT ri.*, p.name AS product_name FROM request_items ri
+        `SELECT ri.*, p.name AS product_name, p.warehouse_id AS warehouse_id FROM request_items ri
          JOIN products p ON p.id = ri.product_id WHERE ri.request_id = ?`, [req.params.id]);
       for (const it of items) {
         const qty = it.approved_qty != null ? it.approved_qty : it.requested_qty;
@@ -235,15 +235,15 @@ router.patch('/:id/transition', authenticate,
            VALUES (?,?, 'out', ?, ?)`,
           [it.product_id, req.params.id, qty, 'Entrega pedido #' + req.params.id]
         );
-        if (it.product_name) nomesEntregues.push(it.product_name);
+        if (it.product_name && it.warehouse_id) entregues.push({ nome: it.product_name, warehouseId: it.warehouse_id });
       }
     }
 
     await conn.commit();
 
-    // Após a entrega, verificar se algum artigo desceu ao stock minimo e alertar os doadores
-    if (to === 'delivered' && nomesEntregues.length) {
-      verificarStockMinimo(nomesEntregues).catch(() => {});
+    // Após a entrega, verificar se algum artigo desceu ao stock minimo (por armazem) e alertar
+    if (to === 'delivered' && entregues.length) {
+      verificarStockMinimo(entregues).catch(() => {});
     }
 
     // Notificar o beneficiario por email nas etapas principais
