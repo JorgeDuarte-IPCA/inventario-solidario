@@ -64,19 +64,26 @@ router.get('/', authenticate, async (req, res) => {
 // Detalhe com itens
 router.get('/:id', authenticate, async (req, res) => {
   const [[request]] = await pool.query(
-    `SELECT r.*, u.name AS beneficiary_name
+    `SELECT r.*, u.name AS beneficiary_name, b.warehouse_id AS beneficiary_warehouse_id,
+            w.name AS beneficiary_warehouse_name, w.district AS beneficiary_district
        FROM requests r
        JOIN beneficiaries b ON b.id = r.beneficiary_id
        JOIN users u ON u.id = b.user_id
+       LEFT JOIN warehouses w ON w.id = b.warehouse_id
       WHERE r.id = ?`, [req.params.id]);
   if (!request) return res.status(404).json({ error: 'Pedido nao encontrado' });
+  // Para cada item, mostrar o stock do artigo (por nome) NO ARMAZEM DO BENEFICIARIO.
   const [items] = await pool.query(
-    `SELECT ri.*, p.name AS product_name, p.quantity AS stock_available,
-            w.name AS warehouse_name
+    `SELECT ri.*, p.name AS product_name,
+            COALESCE((
+              SELECT SUM(p2.quantity) FROM products p2
+               WHERE p2.name = p.name AND p2.warehouse_id = ?
+            ), 0) AS stock_available,
+            ? AS warehouse_name
        FROM request_items ri
        JOIN products p ON p.id = ri.product_id
-       LEFT JOIN warehouses w ON w.id = p.warehouse_id
-      WHERE ri.request_id = ?`, [req.params.id]);
+      WHERE ri.request_id = ?`,
+    [request.beneficiary_warehouse_id, request.beneficiary_warehouse_name || '(sem armazém associado)', req.params.id]);
   res.json({ ...request, items });
 });
 
@@ -215,36 +222,64 @@ router.patch('/:id/transition', authenticate,
       }
     }
 
-    // Ao aprovar: tentar reservar stock (saida)
+    // Ao aprovar/agendar: verificar se ha stock suficiente NO ARMAZEM DO BENEFICIARIO
     if (to === 'scheduled') {
-      const [items] = await conn.query('SELECT * FROM request_items WHERE request_id = ?', [req.params.id]);
+      const [[binfo]] = await conn.query(
+        `SELECT b.warehouse_id FROM requests r JOIN beneficiaries b ON b.id = r.beneficiary_id
+          WHERE r.id = ?`, [req.params.id]);
+      const whId = binfo ? binfo.warehouse_id : null;
+      const [items] = await conn.query(
+        `SELECT ri.*, p.name AS product_name FROM request_items ri
+         JOIN products p ON p.id = ri.product_id WHERE ri.request_id = ?`, [req.params.id]);
       for (const it of items) {
-        const [[p]] = await conn.query('SELECT quantity FROM products WHERE id = ?', [it.product_id]);
         const qty = it.approved_qty != null ? it.approved_qty : it.requested_qty;
-        if (p.quantity < qty) {
+        const [[disp]] = await conn.query(
+          `SELECT COALESCE(SUM(quantity),0) AS stock FROM products WHERE name = ? AND warehouse_id = ?`,
+          [it.product_name, whId]);
+        if (Number(disp.stock) < qty) {
           await conn.rollback();
-          return res.status(409).json({ error: 'Stock insuficiente. Coloque o pedido em on_hold.' });
+          return res.status(409).json({ error: 'Stock insuficiente no armazém do beneficiário. Coloque o pedido em on_hold.' });
         }
       }
     }
 
-    // Ao entregar: registar saidas de stock
+    // Ao entregar: registar saidas de stock DO ARMAZEM DO BENEFICIARIO
     let entregues = [];
     if (to === 'delivered') {
+      // Descobrir o armazem do beneficiario deste pedido
+      const [[binfo]] = await conn.query(
+        `SELECT b.warehouse_id FROM requests r JOIN beneficiaries b ON b.id = r.beneficiary_id
+          WHERE r.id = ?`, [req.params.id]);
+      const whId = binfo ? binfo.warehouse_id : null;
+
       const [items] = await conn.query(
-        `SELECT ri.*, p.name AS product_name, p.warehouse_id AS warehouse_id FROM request_items ri
+        `SELECT ri.*, p.name AS product_name FROM request_items ri
          JOIN products p ON p.id = ri.product_id WHERE ri.request_id = ?`, [req.params.id]);
       for (const it of items) {
         const qty = it.approved_qty != null ? it.approved_qty : it.requested_qty;
         if (qty <= 0) { await conn.query('UPDATE request_items SET fulfilled_qty = 0 WHERE id = ?', [it.id]); continue; }
-        await conn.query('UPDATE products SET quantity = quantity - ? WHERE id = ?', [qty, it.product_id]);
-        await conn.query('UPDATE request_items SET fulfilled_qty = ? WHERE id = ?', [qty, it.id]);
-        await conn.query(
-          `INSERT INTO inventory_movements (product_id, request_id, type, quantity, reason)
-           VALUES (?,?, 'out', ?, ?)`,
-          [it.product_id, req.params.id, qty, 'Entrega pedido #' + req.params.id]
-        );
-        if (it.product_name && it.warehouse_id) entregues.push({ nome: it.product_name, warehouseId: it.warehouse_id });
+
+        // Abater do stock deste artigo no armazem do beneficiario, lote a lote (validade mais proxima primeiro)
+        let porAbater = qty;
+        if (whId) {
+          const [lotes] = await conn.query(
+            `SELECT id, quantity FROM products
+              WHERE name = ? AND warehouse_id = ? AND quantity > 0
+              ORDER BY (expiry_date IS NULL), expiry_date ASC`,
+            [it.product_name, whId]);
+          for (const lote of lotes) {
+            if (porAbater <= 0) break;
+            const tira = Math.min(porAbater, Number(lote.quantity));
+            await conn.query('UPDATE products SET quantity = quantity - ? WHERE id = ?', [tira, lote.id]);
+            await conn.query(
+              `INSERT INTO inventory_movements (product_id, request_id, type, quantity, reason)
+               VALUES (?,?, 'out', ?, ?)`,
+              [lote.id, req.params.id, tira, 'Entrega pedido #' + req.params.id]);
+            porAbater -= tira;
+          }
+        }
+        await conn.query('UPDATE request_items SET fulfilled_qty = ? WHERE id = ?', [qty - porAbater, it.id]);
+        if (it.product_name && whId) entregues.push({ nome: it.product_name, warehouseId: whId });
       }
     }
 
