@@ -57,19 +57,18 @@ router.post('/register', async (req, res) => {
     }
     await conn.commit();
 
-    // Email de confirmacao de registo (so para beneficiarios)
-    if (role === 'beneficiary') {
-      try {
-        await sendMail({
-          to: email,
-          subject: 'Registo recebido - Inventário Solidário',
-          text: `Olá ${name},\n\nO seu registo foi recebido com sucesso e está a aguardar aprovação ` +
-                `por parte da nossa equipa. Será avisado por email assim que a sua conta for aprovada.\n\n` +
-                `Inventário Solidário`,
-        });
-      } catch (mailErr) {
-        console.error('Aviso: falha ao enviar email de registo:', mailErr.message);
-      }
+    // Email de confirmacao de registo (beneficiarios e doadores)
+    try {
+      await sendMail({
+        to: email,
+        subject: 'Registo recebido - Inventário Solidário',
+        text: `Olá ${name},\n\nO seu registo como ${role === 'donor' ? 'doador' : 'beneficiário'} foi recebido ` +
+              `com sucesso e está a aguardar aprovação por parte da nossa equipa. ` +
+              `Será avisado por email assim que a sua conta for aprovada.\n\n` +
+              `Obrigado por se juntar ao Inventário Solidário.`,
+      });
+    } catch (mailErr) {
+      console.error('Aviso: falha ao enviar email de registo:', mailErr.message);
     }
 
     res.status(201).json({ ok: true, message: 'Registo submetido. Aguarda aprovação.' });
