@@ -114,17 +114,26 @@ router.post('/', authenticate, authorize('beneficiary', 'admin'), async (req, re
       const intervalo = cfg ? parseInt(cfg.setting_value, 10) : 0;
       if (intervalo && intervalo > 0) {
         const [[ultimo]] = await pool.query(
-          `SELECT created_at, DATEDIFF(CURDATE(), DATE(created_at)) AS dias_passados
+          `SELECT requested_at,
+                  DATEDIFF(CURDATE(), DATE(requested_at)) AS dias_passados,
+                  DATE_ADD(DATE(requested_at), INTERVAL ? DAY) AS proxima_data
              FROM requests
             WHERE beneficiary_id = ? AND status NOT IN ('rejected','cancelled')
-            ORDER BY created_at DESC LIMIT 1`,
-          [beneficiary_id]
+            ORDER BY requested_at DESC LIMIT 1`,
+          [intervalo, beneficiary_id]
         );
         if (ultimo && ultimo.dias_passados < intervalo) {
           const faltam = intervalo - ultimo.dias_passados;
+          // Formatar a data (YYYY-MM-DD) a partir do resultado
+          let dataStr = '';
+          try {
+            const d = new Date(ultimo.proxima_data);
+            dataStr = d.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+          } catch (_) {}
           return res.status(429).json({
-            error: `Já efetuou um pedido recentemente. Só pode fazer um novo pedido daqui a ${faltam} dia(s) ` +
-                   `(intervalo mínimo de ${intervalo} dias entre pedidos).`
+            error: `Já efetuou um pedido recentemente. Só poderá fazer um novo pedido ` +
+                   (dataStr ? `a partir de ${dataStr}` : `daqui a ${faltam} dia(s)`) +
+                   ` (intervalo mínimo de ${intervalo} dias entre pedidos).`
           });
         }
       }
