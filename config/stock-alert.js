@@ -39,16 +39,34 @@ async function verificarStockMinimo(nomesArtigos) {
            FROM donors d JOIN users u ON u.id = d.user_id
           WHERE u.is_active = TRUE AND u.email IS NOT NULL`
       );
-      if (!doadores.length) continue;
 
-      const assunto = `Pedido de doação: ${nome} (stock baixo)`;
+      // Obter os emails dos administradores e tecnicos sociais ativos (aviso de gestao)
+      const [gestores] = await pool.query(
+        `SELECT name, email FROM users
+          WHERE role IN ('admin', 'social_technician') AND is_active = TRUE AND email IS NOT NULL`
+      );
+
+      if (!doadores.length && !gestores.length) continue;
+
+      const assunto = `Stock baixo: ${nome}`;
+
+      // Mensagem aos doadores: pedido de doacao
       for (const dn of doadores) {
         const texto = `Olá ${dn.name || ''},\n\n` +
           `O stock do artigo "${nome}" está baixo (atual: ${Number(info.stock)}, mínimo: ${Number(info.minimo)}).\n` +
           `Se puder, agradecíamos uma doação deste tipo de artigo para continuarmos a apoiar as famílias.\n\n` +
           `Obrigado pela sua ajuda.\nInventário Solidário`;
-        // Nao bloquear: enviar sem esperar uns pelos outros
-        sendMail({ to: dn.email, subject: assunto, text: texto }).catch(() => {});
+        sendMail({ to: dn.email, subject: 'Pedido de doação: ' + nome + ' (stock baixo)', text: texto }).catch(() => {});
+      }
+
+      // Mensagem aos gestores (admin/tecnico): aviso de gestao
+      for (const g of gestores) {
+        const texto = `Olá ${g.name || ''},\n\n` +
+          `Aviso de gestão: o stock do artigo "${nome}" atingiu o nível mínimo ` +
+          `(atual: ${Number(info.stock)}, mínimo: ${Number(info.minimo)}).\n` +
+          `Os doadores foram notificados, mas convém acompanhar o reabastecimento deste artigo.\n\n` +
+          `Inventário Solidário`;
+        sendMail({ to: g.email, subject: assunto, text: texto }).catch(() => {});
       }
     }
   } catch (e) {
